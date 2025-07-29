@@ -98,7 +98,12 @@ export function PatrimonioRegister(props) {
               label="Localização PCS"
               variant="outlined"
             />
-            <BottomNavigationAction onClick={handleLlocal} icon={<Place />} />
+            <BottomNavigationAction
+                onClick={handleLlocal}
+                icon={<Place />}
+                sx={{ color: 'red' }}
+            />
+
           </Box>
 
           <Box width="100%" maxWidth="400px">
