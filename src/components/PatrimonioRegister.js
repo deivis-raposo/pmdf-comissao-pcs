@@ -14,16 +14,22 @@ import {
   Button,
   TextareaAutosize,
   Box,
+  Typography,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
 import Place from '@mui/icons-material/Place';
 
 export function PatrimonioRegister(props) {
     
   const [unidade, setUnidade] = React.useState('');
-  const [local, setLocal] = React.useState('');
+  const [local] = React.useState('');
   const [checkedModulo, setCheckedModulo] = React.useState(false);
   const [checkedBase, setCheckedBase] = React.useState(false);
   const [checkedTorre, setCheckedTorre] = React.useState(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+ 
 
   const handleChange = (event) => {
     setUnidade(event.target.value);
@@ -53,9 +59,16 @@ export function PatrimonioRegister(props) {
   return (
     <Card sx={{ maxWidth: '100%', overflowX: 'hidden', padding: 2 }}>
       <CardContent>
-        <Box mb={2}>
-          <h4>{props.text}</h4>
-        </Box>
+      <Box
+        p={2}
+        display="flex"
+        justifyContent="center"
+        sx={{ width: '100%' }}
+        >
+      <Box sx={{ width: '100%', maxWidth: isMobile ? '100%' : '900px' }}>
+        <Typography variant="h6" mb={2}>
+          {props.text}
+        </Typography>
 
         <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
           <Box width="100%" maxWidth="400px">
@@ -166,6 +179,8 @@ export function PatrimonioRegister(props) {
           <Box width="100%" display="flex" justifyContent="center" mt={2}>
             <Button variant="contained">Salvar</Button>
           </Box>
+        </Box>
+        </Box>
         </Box>
       </CardContent>
     </Card>

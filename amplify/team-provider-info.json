@@ -1,0 +1,23 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-pmdfcomissaopcsfront-dev-75f9a-authRole",
+      "UnauthRoleArn": "arn:aws:iam::548813916942:role/amplify-pmdfcomissaopcsfront-dev-75f9a-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::548813916942:role/amplify-pmdfcomissaopcsfront-dev-75f9a-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-pmdfcomissaopcsfront-dev-75f9a-deployment",
+      "UnauthRoleName": "amplify-pmdfcomissaopcsfront-dev-75f9a-unauthRole",
+      "StackName": "amplify-pmdfcomissaopcsfront-dev-75f9a",
+      "StackId": "arn:aws:cloudformation:us-east-1:548813916942:stack/amplify-pmdfcomissaopcsfront-dev-75f9a/63f68270-6d7b-11f0-98ce-1250973291a7",
+      "AmplifyAppId": "d328x80eldhqqa"
+    },
+    "categories": {
+      "auth": {
+        "pmdfcomissaopcsfront6e02d02c": {}
+      },
+      "storage": {
+        "storagefilespmdfcomissaopcs": {}
+      }
+    }
+  }
+}
