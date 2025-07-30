@@ -20,7 +20,7 @@ import axios from 'axios';
 const columns = [
   { id: 'unidade', label: 'UNIDADE' },
   { id: 'identificacao', label: 'IDENTIFICAÇÃO' },
-  { id: 'acoes', label: 'AÇÕES' },
+  { id: 'acoes', label: 'EDIT DELETE REPORT' },
 ];
 
 export function PatrimonioList({ text }) {
