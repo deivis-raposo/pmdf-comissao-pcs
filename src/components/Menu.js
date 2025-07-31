@@ -108,7 +108,7 @@ export default function Menu() {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div">
-            PMDF - Comissão PCS - DPTS
+            PMDF/DPTS - COMISSÃO PCS
           </Typography>
         </Toolbar>
       </AppBar>

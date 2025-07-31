@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+
 import {
   Card,
   CardContent,
@@ -28,20 +29,71 @@ const PatrimonioRegister = ({ props }) => {
   const userId = 'anonimo';
 
   // Estados dos campos
+  const [listaCPRs, setListaCPRs] = useState([]);
+  const [listaPCSs, setListaPCSs] = useState([]);
+  
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [unidade, setUnidade] = useState('');
-  const [identificacao, setIdentificacao] = useState('');
+  const [ID_CPR, setID_CPR] = useState('');
+  const [DS_CPR, setCPR] = useState('');
+  const [DS_PCS, setPCS] = useState('');
   const [local, setLocal] = useState('');
   const [observacoes, setObservacoes] = useState('');
   const [checkedModulo, setCheckedModulo] = useState(false);
   const [checkedBase, setCheckedBase] = useState(false);
   const [checkedTorre, setCheckedTorre] = useState(false);
 
+
+  useEffect(() => {
+    const carregarCPRs = async () => {
+      try {
+        const response = await fetch('https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/listar-todos-cpr');
+        if (response.ok) {
+          const data = await response.json();
+          console.log("🚀 Dados recebidos da API:", data);
+          setListaCPRs(data.response); // 👈 Aqui está a correção!
+        } else {
+          console.error('Erro ao carregar CPRs');
+        }
+      } catch (error) {
+        console.error('Erro na requisição de CPRs:', error);
+      }
+    };
+    carregarCPRs();
+  }, []);
+
+  useEffect(() => {
+    const carregarPCSs = async () => {
+      if (!ID_CPR) return;
+  
+      try {
+        const response = await fetch(
+          `https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/listar-pcs-por-cpr?cpr=${encodeURIComponent(ID_CPR)}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          console.log("📦 PCS recebidos:", data);
+          setListaPCSs(data.response || []); // Ajuste se a chave for diferente
+        } else {
+          console.error('Erro ao carregar PCS');
+          setListaPCSs([]);
+        }
+      } catch (error) {
+        console.error('Erro na requisição de PCS:', error);
+        setListaPCSs([]);
+      }
+    };
+  
+    carregarPCSs();
+  }, [ID_CPR]);
+  
+  
+  
+
   const handleReset = () => {
     setFiles([]);
-    setUnidade('');
-    setIdentificacao('');
+    setCPR('');
+    setPCS('');
     setLocal('');
     setObservacoes('');
     setCheckedModulo(false);
@@ -78,8 +130,8 @@ const PatrimonioRegister = ({ props }) => {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userId,
-            unidade,
-            identificacao,
+            DS_CPR,
+            DS_PCS,
             local,
             observacoes,
             localizacao: {
@@ -115,27 +167,44 @@ const PatrimonioRegister = ({ props }) => {
           </Typography>
 
           <Stack spacing={2}>
-            <FormControl fullWidth>
-              <InputLabel id="unidade-select-label">Unidade</InputLabel>
-              <Select
-                labelId="unidade-select-label"
-                value={unidade}
-                label="Unidade"
-                onChange={(e) => setUnidade(e.target.value)}
-              >
-                <MenuItem value={1}>1 BPM</MenuItem>
-                <MenuItem value={2}>2 BPM</MenuItem>
-                <MenuItem value={3}>3 BPM</MenuItem>
-              </Select>
-            </FormControl>
+          <FormControl fullWidth>
+            <InputLabel id="cpr-select-label">CPR</InputLabel>
+            <Select
+              labelId="cpr-select-label"
+              value={ID_CPR}
+              label="CPR"
+              onChange={(e) => {
+                const selectedId = e.target.value;
+                setID_CPR(selectedId);
+                const cprSelecionado = listaCPRs.find((cpr) => cpr.ID_CPR === selectedId);
+                setCPR(cprSelecionado?.DS_CPR || '');
+              }}
+            >
+              {listaCPRs.map((cpr) => (
+                <MenuItem key={cpr.ID_CPR} value={cpr.ID_CPR}>
+                  {cpr.DS_CPR}
+                </MenuItem>
+              ))}
+            </Select>
 
-            <TextField
-              fullWidth
-              label="Identificação PCS"
-              variant="outlined"
-              value={identificacao}
-              onChange={(e) => setIdentificacao(e.target.value)}
-            />
+          </FormControl>
+
+          <FormControl fullWidth>
+            <InputLabel id="pcs-select-label">PCS</InputLabel>
+            <Select
+              labelId="pcs-select-label"
+              value={DS_PCS}
+              label="PCS"
+              onChange={(e) => setPCS(e.target.value)}
+            >
+              {listaPCSs.map((pcs) => (
+                <MenuItem key={pcs.ID_PCS} value={pcs.DS_PCS}>
+                  {pcs.DS_PCS}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
 
             <Box display="flex" alignItems="center" gap={1}>
               <TextField
