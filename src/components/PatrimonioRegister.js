@@ -36,13 +36,17 @@ const PatrimonioRegister = ({ props }) => {
 
   // Estados dos campos
   const [listaCPRs, setListaCPRs] = useState([]);
+  const [listaBPMs, setListaBPMs] = useState([]);
   const [listaPCSs, setListaPCSs] = useState([]);
   
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [ID_CPR, setID_CPR] = useState('');
-  const [DS_CPR, setCPR] = useState('');
-  const [DS_PCS, setPCS] = useState('');
+  const [DS_CPR, setDS_CPR] = useState('');
+  const [ID_PCS, setID_PCS] = useState('');
+  const [DS_PCS, setDS_PCS] = useState('');
+  const [ID_BPM, setID_BPM] = useState('');
+  const [DS_BPM, setBPM] = useState('');
   const [local, setLocal] = useState('');
   const [observacoes, setObservacoes] = useState('');
   const [checkedModulo, setCheckedModulo] = useState(false);
@@ -69,12 +73,36 @@ const PatrimonioRegister = ({ props }) => {
   }, []);
 
   useEffect(() => {
-    const carregarPCSs = async () => {
+    const carregarBPMs = async () => {
       if (!ID_CPR) return;
   
       try {
         const response = await fetch(
-          `https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/listar-pcs-por-cpr?cpr=${encodeURIComponent(ID_CPR)}`
+          `https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/listar-bpm-por-cpr?cpr=${encodeURIComponent(ID_CPR)}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          console.log("📦 BPM recebidos:", data);
+          setListaBPMs(data.response || []); // Ajuste se a chave for diferente
+        } else {
+          console.error('Erro ao carregar BPM');
+          setListaBPMs([]);
+        }
+      } catch (error) {
+        console.error('Erro na requisição de BPM:', error);
+        setListaBPMs([]);
+      }
+    };
+    carregarBPMs();
+  }, [ID_CPR]);
+
+  useEffect(() => {
+    const carregarPCSs = async () => {
+      if (!ID_BPM) return;
+  
+      try {
+        const response = await fetch(
+          `https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/listar-pcs-por-bpm?bpm=${encodeURIComponent(ID_BPM)}`
         );
         if (response.ok) {
           const data = await response.json();
@@ -89,17 +117,16 @@ const PatrimonioRegister = ({ props }) => {
         setListaPCSs([]);
       }
     };
-  
     carregarPCSs();
-  }, [ID_CPR]);
+  }, [ID_BPM]);
   
   
   
 
   const handleReset = () => {
     setFiles([]);
-    setCPR('');
-    setPCS('');
+    setDS_CPR('');
+    setDS_PCS('');
     setLocal('');
     setObservacoes('');
     setCheckedModulo(false);
@@ -130,7 +157,7 @@ const PatrimonioRegister = ({ props }) => {
       }
 
       const response = await fetch(
-        'https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/cadastrar-imagens',
+        'https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/upload-arquivos-bucket',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -183,7 +210,7 @@ const PatrimonioRegister = ({ props }) => {
                 const selectedId = e.target.value;
                 setID_CPR(selectedId);
                 const cprSelecionado = listaCPRs.find((cpr) => cpr.ID_CPR === selectedId);
-                setCPR(cprSelecionado?.DS_CPR || '');
+                setDS_CPR(cprSelecionado?.DS_CPR || '');
               }}
             >
               {listaCPRs.map((cpr) => (
@@ -196,12 +223,34 @@ const PatrimonioRegister = ({ props }) => {
           </FormControl>
 
           <FormControl fullWidth>
+            <InputLabel id="bpm-select-label">BPM</InputLabel>
+            <Select
+              labelId="bpm-select-label"
+              value={ID_BPM}
+              label="BPM"
+              onChange={(e) => {
+                const selectedId = e.target.value;
+                setID_BPM(selectedId);
+                const bpmSelecionado = listaBPMs.find((bpm) => bpm.ID_BPM === selectedId);
+                setBPM(bpmSelecionado?.DS_BPM || '');
+              }}
+            >
+              {listaBPMs.map((bpm) => (
+                <MenuItem key={bpm.ID_BPM} value={bpm.ID_BPM}>
+                  {bpm.DS_BPM}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+
+          <FormControl fullWidth>
             <InputLabel id="pcs-select-label">PCS</InputLabel>
             <Select
               labelId="pcs-select-label"
               value={DS_PCS}
               label="PCS"
-              onChange={(e) => setPCS(e.target.value)}
+              onChange={(e) => setDS_PCS(e.target.value)}
             >
               {listaPCSs.map((pcs) => (
                 <MenuItem key={pcs.ID_PCS} value={pcs.DS_PCS}>
@@ -282,7 +331,7 @@ const PatrimonioRegister = ({ props }) => {
               <Typography variant="subtitle2" gutterBottom>
                 Patrimônio Localizado:
               </Typography>
-              <FormGroup>
+              <FormGroup row sx={{ gap: 2 }}> {/* <-- aqui está a mudança */}
                 <FormControlLabel
                   control={<Switch checked={checkedModulo} onChange={() => setCheckedModulo(!checkedModulo)} />}
                   label="Módulo"
@@ -297,6 +346,7 @@ const PatrimonioRegister = ({ props }) => {
                 />
               </FormGroup>
             </Box>
+
 
             <TextField
               fullWidth
