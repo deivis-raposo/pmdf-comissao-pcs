@@ -19,14 +19,20 @@ import {
   useMediaQuery,
   useTheme,
   Stack,
+  Tooltip,
 } from '@mui/material';
 import PlaceIcon from '@mui/icons-material/Place';
 import { uploadData } from 'aws-amplify/storage';
+
 
 const PatrimonioRegister = ({ props }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const userId = 'anonimo';
+  const [coordenadas, setCoordenadas] = useState({ lat: '', lng: '' });
+  const [endereco, setEndereco] = useState('');
+  const [loadingLocalizacao, setLoadingLocalizacao] = useState(false);
+
 
   // Estados dos campos
   const [listaCPRs, setListaCPRs] = useState([]);
@@ -214,11 +220,64 @@ const PatrimonioRegister = ({ props }) => {
                 value={local}
                 onChange={(e) => setLocal(e.target.value)}
               />
-              <IconButton onClick={() => alert('Funcionalidade futura')}>
-                <PlaceIcon color="error" />
-              </IconButton>
-            </Box>
+              <Tooltip title={endereco || 'Clique para obter localização'}>
+              <span>
+                <IconButton
+                  onClick={async () => {
+                    if (!navigator.geolocation) {
+                      alert('Geolocalização não é suportada neste navegador.');
+                      return;
+                    }
 
+                    setLoadingLocalizacao(true);
+
+                    navigator.geolocation.getCurrentPosition(
+                      async (position) => {
+                        const { latitude, longitude } = position.coords;
+
+                        setCoordenadas({ lat: latitude, lng: longitude });
+
+                        try {
+                          const response = await fetch(
+                            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+                          );
+                          const data = await response.json();
+
+                          if (data?.display_name) {
+                            setEndereco(data.display_name);
+                            setLocal(data.display_name);
+                          } else {
+                            const fallback = `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`;
+                            setEndereco(fallback);
+                            setLocal(fallback);
+                          }
+                        } catch (error) {
+                          console.error('Erro ao buscar endereço:', error);
+                          const fallback = `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`;
+                          setEndereco(fallback);
+                          setLocal(fallback);
+                        } finally {
+                          setLoadingLocalizacao(false);
+                        }
+                      },
+                      (error) => {
+                        console.error('Erro ao obter localização:', error);
+                        alert('Erro ao obter localização. Verifique permissões.');
+                        setLoadingLocalizacao(false);
+                      }
+                    );
+                  }}
+                >
+                  {loadingLocalizacao ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    <PlaceIcon color="error" />
+                  )}
+                </IconButton>
+              </span>
+            </Tooltip>
+            </Box>
+            
             <Box>
               <Typography variant="subtitle2" gutterBottom>
                 Patrimônio Localizado:
