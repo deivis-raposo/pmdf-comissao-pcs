@@ -16,15 +16,18 @@ import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
-import { PatrimonioRegister } from './PatrimonioRegister';
-import { PatrimonioList } from './PatrimonioList';
-import { Container } from '@mui/material';
 import { Add, Grading } from '@mui/icons-material';
+import { Container } from '@mui/material';
+
+import PatrimonioRegister from './PatrimonioRegister';
+import { PatrimonioList } from './PatrimonioList';
+import PatrimonioRegisterNew from './PatrimonioRegisterNew';
 
 const drawerWidth = 240;
 
+// Main content area
 const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(
-  ({ theme }) => ({
+  ({ theme, open }) => ({
     flexGrow: 1,
     padding: theme.spacing(3),
     transition: theme.transitions.create('margin', {
@@ -32,48 +35,39 @@ const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(
       duration: theme.transitions.duration.leavingScreen,
     }),
     marginLeft: `-${drawerWidth}px`,
-    variants: [
-      {
-        props: ({ open }) => open,
-        style: {
-          transition: theme.transitions.create('margin', {
-            easing: theme.transitions.easing.easeOut,
-            duration: theme.transitions.duration.enteringScreen,
-          }),
-          marginLeft: 0,
-        },
-      },
-    ],
+    ...(open && {
+      transition: theme.transitions.create('margin', {
+        easing: theme.transitions.easing.easeOut,
+        duration: theme.transitions.duration.enteringScreen,
+      }),
+      marginLeft: 0,
+    }),
   }),
 );
 
+// Top AppBar
 const AppBar = styled(MuiAppBar, {
   shouldForwardProp: (prop) => prop !== 'open',
-})(({ theme }) => ({
+})(({ theme, open }) => ({
   transition: theme.transitions.create(['margin', 'width'], {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
   }),
-  variants: [
-    {
-      props: ({ open }) => open,
-      style: {
-        width: `calc(100% - ${drawerWidth}px)`,
-        marginLeft: `${drawerWidth}px`,
-        transition: theme.transitions.create(['margin', 'width'], {
-          easing: theme.transitions.easing.easeOut,
-          duration: theme.transitions.duration.enteringScreen,
-        }),
-      },
-    },
-  ],
+  ...(open && {
+    width: `calc(100% - ${drawerWidth}px)`,
+    marginLeft: `${drawerWidth}px`,
+    transition: theme.transitions.create(['margin', 'width'], {
+      easing: theme.transitions.easing.easeOut,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+  }),
 }));
 
+// Drawer header (com botão de fechar)
 const DrawerHeader = styled('div')(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   padding: theme.spacing(0, 1),
-  // necessary for content to be below app bar
   ...theme.mixins.toolbar,
   justifyContent: 'flex-end',
 }));
@@ -91,12 +85,13 @@ export default function Menu() {
     setOpen(false);
   };
 
-
-  function componentSelector(){
-    if(visible === 1){
-      return <PatrimonioRegister text={"CADASTRO DE PATRIMÔNIO"}/>
-    } else if(visible ===2){
-      return <PatrimonioList text={"LISTAGEM DE PATRIMÔNIOS CADASTRADOS"}/>
+  function componentSelector() {
+    if (visible === 0) {
+      return <PatrimonioRegisterNew text={"NEW CADASTRO"} />;
+    } else if (visible === 1) {
+      return <PatrimonioRegister text={"CADASTRO DE PATRIMÔNIO"} />;
+    } else if (visible === 2) {
+      return <PatrimonioList text={"PATRIMÔNIOS CADASTRADOS"} />;
     }
   }
 
@@ -110,17 +105,12 @@ export default function Menu() {
             aria-label="open drawer"
             onClick={handleDrawerOpen}
             edge="start"
-            sx={[
-              {
-                mr: 2,
-              },
-              open && { display: 'none' },
-            ]}
+            sx={{ mr: 2, ...(open && { display: 'none' }) }}
           >
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div">
-            <p> PMDF - Comissão PCS - DPTS </p>
+            PMDF - Comissão PCS - DPTS
           </Typography>
         </Toolbar>
       </AppBar>
@@ -144,29 +134,38 @@ export default function Menu() {
         </DrawerHeader>
         <Divider />
         <List>
-            <ListItem onClick={() => { setVisible(1) }} key={1} disablePadding>
-              <ListItemButton>
-                <ListItemIcon>
-                <Add />
-                </ListItemIcon>
-                <ListItemText primary={"Incluir Patrimônio"} />
-              </ListItemButton>
-            </ListItem>
+          <ListItem
+            onClick={() => {
+              setVisible(1);
+              handleDrawerClose();
+            }}
+            disablePadding
+          >
+            <ListItemButton>
+              <ListItemIcon><Add /></ListItemIcon>
+              <ListItemText primary="Incluir Patrimônio" />
+            </ListItemButton>
+          </ListItem>
 
-            <ListItem onClick={() => { setVisible(2) }} key={2} disablePadding>
-              <ListItemButton>
-                <ListItemIcon>
-                  <Grading />
-                </ListItemIcon>
-                <ListItemText primary={"Listar Patrimônios"} />
-              </ListItemButton>
-            </ListItem>
+          <ListItem
+            onClick={() => {
+              setVisible(2);
+              handleDrawerClose();
+            }}
+            disablePadding
+          >
+            <ListItemButton>
+              <ListItemIcon><Grading /></ListItemIcon>
+              <ListItemText primary="Listar Patrimônios" />
+            </ListItemButton>
+          </ListItem>
         </List>
+
       </Drawer>
       <Main open={open}>
         <DrawerHeader />
         <Container>
-            {componentSelector()}
+          {componentSelector()}
         </Container>
       </Main>
     </Box>
