@@ -68,7 +68,7 @@ export function PatrimonioList({ text }) {
           ) : rows.length === 0 ? (
             <Box py={5}>
               <Typography textAlign="center" color="text.secondary">
-                Nenhum patrimônio localizado na base de dados.
+                Nenhum registro localizado na base de dados.
               </Typography>
             </Box>
           ) : (
@@ -86,27 +86,27 @@ export function PatrimonioList({ text }) {
                     {rows
                       .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                       .map((row) => (
-                        <TableRow hover key={row.id_inventario}>
-                          <TableCell>{row.id_unidade}</TableCell>
-                          <TableCell>{row.id_pcs}</TableCell>
+                        <TableRow hover key={row.ID_PATRIMONIO}>
+                          <TableCell>{row.ID_PCS}</TableCell>
+                          <TableCell>{row.ID_CPR}</TableCell>
                           <TableCell>
                             <Stack direction="row" spacing={1}>
                               <IconButton
-                                onClick={() => handleEdit(row.id_inventario)}
+                                onClick={() => handleEdit(row.ID_PATRIMONIO)}
                                 color="primary"
                                 size={isMobile ? 'small' : 'medium'}
                               >
                                 <Edit fontSize={isMobile ? 'small' : 'medium'} />
                               </IconButton>
                               <IconButton
-                                onClick={() => handleDelete(row.id_inventario)}
+                                onClick={() => handleDelete(row.ID_PATRIMONIO)}
                                 color="error"
                                 size={isMobile ? 'small' : 'medium'}
                               >
                                 <Delete fontSize={isMobile ? 'small' : 'medium'} />
                               </IconButton>
                               <IconButton
-                                onClick={() => handleReport(row.id_inventario)}
+                                onClick={() => handleReport(row.ID_PATRIMONIO)}
                                 color="secondary"
                                 size={isMobile ? 'small' : 'medium'}
                               >

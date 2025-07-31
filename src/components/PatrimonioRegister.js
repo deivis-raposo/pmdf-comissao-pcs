@@ -93,7 +93,7 @@ const PatrimonioRegister = ({ props }) => {
       );
 
       if (response.ok) {
-        alert('Upload completo e arquivos registrados no banco!');
+        alert('Registro Inserido com Sucesso!');
         handleReset(); // ✅ limpar formulário
       } else {
         alert('Erro ao registrar os arquivos no banco de dados.');
