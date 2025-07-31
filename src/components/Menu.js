@@ -21,7 +21,7 @@ import { Container } from '@mui/material';
 
 import PatrimonioRegister from './PatrimonioRegister';
 import { PatrimonioList } from './PatrimonioList';
-import PatrimonioRegisterNew from './PatrimonioRegisterNew';
+
 
 const drawerWidth = 240;
 
@@ -86,9 +86,7 @@ export default function Menu() {
   };
 
   function componentSelector() {
-    if (visible === 0) {
-      return <PatrimonioRegisterNew text={"NEW CADASTRO"} />;
-    } else if (visible === 1) {
+    if (visible === 1) {
       return <PatrimonioRegister text={"CADASTRO DE PATRIMÔNIO"} />;
     } else if (visible === 2) {
       return <PatrimonioList text={"PATRIMÔNIOS CADASTRADOS"} />;
