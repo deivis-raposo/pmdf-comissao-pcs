@@ -2,22 +2,21 @@ import React, { useEffect, useState } from 'react';
 import {
   Card, CardContent, FormControl, InputLabel, Select, MenuItem, TextField,
   FormGroup, FormControlLabel, Switch, Button, Box, Typography, IconButton,
-  CircularProgress, useMediaQuery, useTheme, Stack, Tooltip, Snackbar, Alert
+  CircularProgress, useMediaQuery, useTheme, Stack, Tooltip, Snackbar, Alert,
+  Grid, Paper
 } from '@mui/material';
 import PlaceIcon from '@mui/icons-material/Place';
-import { uploadData, getUrl } from 'aws-amplify/storage';
+import DeleteIcon from '@mui/icons-material/Delete';
+
+const API_BASE = 'https://glu9nz6t07.execute-api.us-east-1.amazonaws.com';
 
 const PatrimonioRegister = ({ props }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const userId = 'anonimo';
 
-  // Estados para selects e dados
   const [listaCPRs, setListaCPRs] = useState([]);
   const [listaBPMs, setListaBPMs] = useState([]);
   const [listaPCSs, setListaPCSs] = useState([]);
-
-  // Estados do formulário
   const [ID_CPR, setID_CPR] = useState('');
   const [DS_CPR, setDS_CPR] = useState('');
   const [ID_BPM, setID_BPM] = useState('');
@@ -29,16 +28,11 @@ const PatrimonioRegister = ({ props }) => {
   const [checkedBase, setCheckedBase] = useState(false);
   const [checkedTorre, setCheckedTorre] = useState(false);
   const [patrimonioExistente, setPatrimonioExistente] = useState(null);
-
-  // Arquivos
   const [files, setFiles] = useState([]);
-
-  // Estados de loading
   const [loading, setLoading] = useState(false);
   const [loadingLocalizacao, setLoadingLocalizacao] = useState(false);
   const [endereco, setEndereco] = useState('');
 
-  // Snackbar
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [alertSeverity, setAlertSeverity] = useState('success');
@@ -49,9 +43,19 @@ const PatrimonioRegister = ({ props }) => {
     setAlertOpen(true);
   };
 
+  // Converte arquivo para Base64
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = (error) => reject(error);
+      reader.readAsDataURL(file);
+    });
+  };
+
   // Carregar CPRs
   useEffect(() => {
-    fetch('https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/listar-todos-cpr')
+    fetch(`${API_BASE}/listar-todos-cpr`)
       .then(res => res.json())
       .then(result => {
         if (result.success) setListaCPRs(result.data || []);
@@ -63,7 +67,7 @@ const PatrimonioRegister = ({ props }) => {
   // Carregar BPMs
   useEffect(() => {
     if (!ID_CPR) { setListaBPMs([]); setID_BPM(''); return; }
-    fetch(`https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/listar-bpm-por-cpr?cpr=${ID_CPR}`)
+    fetch(`${API_BASE}/listar-bpm-por-cpr?cpr=${ID_CPR}`)
       .then(res => res.json())
       .then(result => {
         if (result.success) setListaBPMs(result.data || []);
@@ -75,7 +79,7 @@ const PatrimonioRegister = ({ props }) => {
   // Carregar PCS
   useEffect(() => {
     if (!ID_BPM) { setListaPCSs([]); setID_PCS(''); return; }
-    fetch(`https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/listar-pcs-por-bpm?bpm=${ID_BPM}`)
+    fetch(`${API_BASE}/listar-pcs-por-bpm?bpm=${ID_BPM}`)
       .then(res => res.json())
       .then(result => {
         if (result.success) setListaPCSs(result.data || []);
@@ -87,7 +91,7 @@ const PatrimonioRegister = ({ props }) => {
   // Consultar patrimônio existente
   useEffect(() => {
     if (ID_CPR && ID_BPM && ID_PCS) {
-      fetch(`https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/consultar-patrimonio?cpr=${ID_CPR}&bpm=${ID_BPM}&pcs=${ID_PCS}`)
+      fetch(`${API_BASE}/consultar-patrimonio?cpr=${ID_CPR}&bpm=${ID_BPM}&pcs=${ID_PCS}`)
         .then(res => res.json())
         .then(result => {
           if (!result.success) {
@@ -105,8 +109,9 @@ const PatrimonioRegister = ({ props }) => {
 
             if (p.arquivos && p.arquivos.length > 0) {
               setFiles(p.arquivos.map(arq => ({
+                id: arq.ID_ARQUIVO,
                 nome: arq.NM_ARQUIVO,
-                path: arq.URL_ARQUIVO_BUCKET,
+                url: arq.URL_ARQUIVO_BUCKET,
                 tipo: arq.TP_ARQUIVO,
                 tamanho: arq.TAM_ARQUIVO,
                 existente: true
@@ -114,6 +119,7 @@ const PatrimonioRegister = ({ props }) => {
             }
             showAlert(result.message, result.severity);
           } else {
+            // Limpa apenas dados, mantendo seleções
             setPatrimonioExistente(null);
             setLocal('');
             setObservacoes('');
@@ -144,6 +150,25 @@ const PatrimonioRegister = ({ props }) => {
     setPatrimonioExistente(null);
   };
 
+  const handleRemoveFile = async (index) => {
+    const file = files[index];
+    if (file.existente && file.id) {
+      try {
+        const res = await fetch(`${API_BASE}/excluir-arquivo?id=${file.id}`, { method: "DELETE" });
+        const result = await res.json();
+        showAlert(result.message, result.severity);
+        if (result.success) {
+          setFiles(prev => prev.filter((_, i) => i !== index));
+        }
+      } catch (error) {
+        console.error("Erro ao excluir arquivo:", error);
+        showAlert("Erro ao excluir arquivo.", "error");
+      }
+    } else {
+      setFiles(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
   const handleUpload = async () => {
     if (!ID_CPR || !ID_BPM || !ID_PCS) {
       showAlert('Por favor, selecione CPR, BPM e PCS.', 'warning');
@@ -156,12 +181,10 @@ const PatrimonioRegister = ({ props }) => {
     try {
       for (const file of files) {
         if (!file.existente) {
-          const fileName = `${userId}/${Date.now()}-${file.name}`;
-          await uploadData({ key: fileName, data: file, options: { contentType: file.type } }).result;
-          const { url } = await getUrl({ key: fileName });
+          const base64 = await fileToBase64(file);
           arquivosParaSalvar.push({
             nome: file.name,
-            path: url.toString(),
+            base64,
             tipo: file.type,
             tamanho: file.size
           });
@@ -180,7 +203,7 @@ const PatrimonioRegister = ({ props }) => {
         arquivos: arquivosParaSalvar
       };
 
-      const res = await fetch('https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/cadastrar-patrimonio', {
+      const res = await fetch(`${API_BASE}/cadastrar-patrimonio`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -207,7 +230,7 @@ const PatrimonioRegister = ({ props }) => {
           </Typography>
 
           <Stack spacing={2}>
-            {/* Select CPR */}
+            {/* CPR */}
             <FormControl fullWidth>
               <InputLabel id="cpr-select-label">CPR</InputLabel>
               <Select
@@ -224,7 +247,7 @@ const PatrimonioRegister = ({ props }) => {
               </Select>
             </FormControl>
 
-            {/* Select BPM */}
+            {/* BPM */}
             <FormControl fullWidth>
               <InputLabel id="bpm-select-label">BPM</InputLabel>
               <Select
@@ -241,7 +264,7 @@ const PatrimonioRegister = ({ props }) => {
               </Select>
             </FormControl>
 
-            {/* Select PCS */}
+            {/* PCS */}
             <FormControl fullWidth>
               <InputLabel id="pcs-select-label">PCS</InputLabel>
               <Select
@@ -312,18 +335,34 @@ const PatrimonioRegister = ({ props }) => {
             {/* Observações */}
             <TextField fullWidth multiline rows={4} label="Observações Gerais" value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
 
-            {/* Arquivos existentes */}
-            {files.some(f => f.existente) && (
-              <Box>
-                <Typography variant="subtitle2">Arquivos existentes:</Typography>
-                <ul>
-                  {files.filter(f => f.existente).map((file, idx) => (
-                    <li key={idx}>
-                      <a href={file.path} target="_blank" rel="noopener noreferrer">{file.nome}</a>
-                    </li>
-                  ))}
-                </ul>
-              </Box>
+            {/* Lista de arquivos */}
+            {files.length > 0 && (
+              <Grid container spacing={2}>
+                {files.map((file, idx) => (
+                  <Grid item xs={6} key={idx}>
+                    <Paper sx={{ p: 1, position: 'relative' }}>
+                      <IconButton
+                        size="small"
+                        sx={{ position: 'absolute', top: 0, right: 0 }}
+                        onClick={() => handleRemoveFile(idx)}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                      {file.tipo?.startsWith('image') || file.type?.startsWith('image') ? (
+                        <img
+                          src={file.url || URL.createObjectURL(file)}
+                          alt={file.nome || file.name}
+                          style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: 4 }}
+                        />
+                      ) : (
+                        <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                          {file.nome || file.name}
+                        </Typography>
+                      )}
+                    </Paper>
+                  </Grid>
+                ))}
+              </Grid>
             )}
 
             {/* Upload arquivos novos */}
@@ -334,7 +373,6 @@ const PatrimonioRegister = ({ props }) => {
                 setFiles(prev => [...prev, ...novos]);
               }} />
             </Button>
-            <Typography variant="caption">{files.filter(f => !f.existente).length} arquivo(s) novo(s) selecionado(s)</Typography>
 
             {/* Botões */}
             <Button variant="contained" fullWidth color="primary" onClick={handleUpload} disabled={loading}>
@@ -345,7 +383,6 @@ const PatrimonioRegister = ({ props }) => {
             </Button>
           </Stack>
 
-          {/* Snackbar */}
           <Snackbar
             open={alertOpen}
             autoHideDuration={4000}
