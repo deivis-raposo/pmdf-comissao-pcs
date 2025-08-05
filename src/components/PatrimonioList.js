@@ -1,22 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
-  IconButton,
-  useMediaQuery,
-  useTheme,
-  Paper,
-  CircularProgress,
-  Stack
+  Box, Card, CardContent, Typography, Table, TableBody, TableCell, TableContainer,
+  TableHead, TablePagination, TableRow, IconButton, useMediaQuery, useTheme,
+  Paper, CircularProgress, Stack, Snackbar, Alert
 } from '@mui/material';
 import { Edit, Delete, AdfScanner } from '@mui/icons-material';
 import axios from 'axios';
@@ -27,20 +13,40 @@ export function PatrimonioList({ text }) {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
+  // Snackbar
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertSeverity, setAlertSeverity] = useState('success');
+
+  const showAlert = (message, severity = 'success') => {
+    setAlertMessage(message);
+    setAlertSeverity(severity);
+    setAlertOpen(true);
+  };
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  useEffect(() => {
+  const carregarPatrimonios = () => {
+    setLoading(true);
     axios
       .get('https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/listar-todos-patrimonios')
       .then((res) => {
-        setRows(res.data.response || []);
+        if (res.data.success) {
+          setRows(res.data.data || []);
+        }
+        showAlert(res.data.message, res.data.severity || 'info');
         setLoading(false);
       })
       .catch((err) => {
         console.error('Erro ao buscar dados:', err);
+        showAlert('Erro ao buscar dados no servidor.', 'error');
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    carregarPatrimonios();
   }, []);
 
   const handleChangePage = (_, newPage) => setPage(newPage);
@@ -50,7 +56,21 @@ export function PatrimonioList({ text }) {
   };
 
   const handleEdit = (id) => console.log('Editar item:', id);
-  const handleDelete = (id) => console.log('Excluir item:', id);
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Tem certeza que deseja excluir este patrimônio e todos os arquivos vinculados?")) return;
+    try {
+      const res = await axios.delete(`https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/excluir-patrimonio?id=${id}`);
+      showAlert(res.data.message, res.data.severity || 'info');
+      if (res.data.success) {
+        carregarPatrimonios();
+      }
+    } catch (error) {
+      console.error(error);
+      showAlert('Erro ao excluir patrimônio.', 'error');
+    }
+  };
+
   const handleReport = (id) => console.log('Detalhar item:', id);
 
   return (
@@ -77,9 +97,10 @@ export function PatrimonioList({ text }) {
                 <Table size="small" stickyHeader>
                   <TableHead>
                     <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold' }}>UNIDADE</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>IDENTIFICAÇÃO</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>AÇÕES</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>CPR</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>BPM</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>PCS</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>Ações</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -87,8 +108,9 @@ export function PatrimonioList({ text }) {
                       .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                       .map((row) => (
                         <TableRow hover key={row.ID_PATRIMONIO}>
-                          <TableCell>{row.ID_PCS}</TableCell>
-                          <TableCell>{row.ID_CPR}</TableCell>
+                          <TableCell>{row.DS_CPR}</TableCell>
+                          <TableCell>{row.DS_BPM}</TableCell>
+                          <TableCell>{row.DS_PCS}</TableCell>
                           <TableCell>
                             <Stack direction="row" spacing={1}>
                               <IconButton
@@ -133,6 +155,18 @@ export function PatrimonioList({ text }) {
           )}
         </CardContent>
       </Card>
+
+      {/* Snackbar */}
+      <Snackbar
+        open={alertOpen}
+        autoHideDuration={4000}
+        onClose={() => setAlertOpen(false)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setAlertOpen(false)} severity={alertSeverity} sx={{ width: '100%' }}>
+          {alertMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
