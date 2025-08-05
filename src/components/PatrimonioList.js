@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import {
   Box, Card, CardContent, Typography, Table, TableBody, TableCell, TableContainer,
   TableHead, TablePagination, TableRow, IconButton, useMediaQuery, useTheme,
-  Paper, CircularProgress, Stack, Snackbar, Alert
+  Paper, CircularProgress, Stack, Snackbar, Alert, Dialog, DialogTitle, DialogContent,
+  DialogContentText, DialogActions, Button
 } from '@mui/material';
 import { Edit, Delete, AdfScanner } from '@mui/icons-material';
 import axios from 'axios';
@@ -17,6 +18,10 @@ export function PatrimonioList({ text }) {
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [alertSeverity, setAlertSeverity] = useState('success');
+
+  // Dialog de confirmação
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
 
   const showAlert = (message, severity = 'success') => {
     setAlertMessage(message);
@@ -57,10 +62,15 @@ export function PatrimonioList({ text }) {
 
   const handleEdit = (id) => console.log('Editar item:', id);
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Tem certeza que deseja excluir este patrimônio e todos os arquivos vinculados?")) return;
+  const confirmDelete = (id) => {
+    setDeleteId(id);
+    setConfirmOpen(true);
+  };
+
+  const executeDelete = async () => {
+    setConfirmOpen(false);
     try {
-      const res = await axios.delete(`https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/excluir-patrimonio?id=${id}`);
+      const res = await axios.delete(`https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/excluir-patrimonio?id=${deleteId}`);
       showAlert(res.data.message, res.data.severity || 'info');
       if (res.data.success) {
         carregarPatrimonios();
@@ -121,7 +131,7 @@ export function PatrimonioList({ text }) {
                                 <Edit fontSize={isMobile ? 'small' : 'medium'} />
                               </IconButton>
                               <IconButton
-                                onClick={() => handleDelete(row.ID_PATRIMONIO)}
+                                onClick={() => confirmDelete(row.ID_PATRIMONIO)}
                                 color="error"
                                 size={isMobile ? 'small' : 'medium'}
                               >
@@ -155,6 +165,30 @@ export function PatrimonioList({ text }) {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog de confirmação */}
+      <Dialog
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle>Confirmar Exclusão</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Tem certeza que deseja excluir este patrimônio e todos os arquivos vinculados?
+            Esta ação não poderá ser desfeita.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmOpen(false)} color="primary" variant="outlined">
+            Cancelar
+          </Button>
+          <Button onClick={executeDelete} color="error" variant="contained">
+            Excluir
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Snackbar */}
       <Snackbar
