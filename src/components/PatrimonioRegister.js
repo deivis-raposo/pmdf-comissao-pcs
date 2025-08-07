@@ -348,22 +348,40 @@ const PatrimonioRegister = ({ props }) => {
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
-                      {file.tipo?.startsWith('image') || file.type?.startsWith('image') ? (
-                        <img
-                          src={file.url || URL.createObjectURL(file)}
-                          alt={file.nome || file.name}
-                          style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: 4 }}
-                        />
-                      ) : (
-                        <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
-                          {file.nome || file.name}
-                        </Typography>
-                      )}
+
+                      {/* Link clicável para abrir o arquivo/imagem */}
+                      <a
+                        href={file.url || URL.createObjectURL(file)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ textDecoration: 'none' }}
+                      >
+                        {file.tipo?.startsWith('image') || file.type?.startsWith('image') ? (
+                          <img
+                            src={file.url || URL.createObjectURL(file)}
+                            alt={file.nome || file.name}
+                            style={{ width: '100%', height: '100px', objectFit: 'cover', borderRadius: 4 }}
+                          />
+                        ) : (
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              wordBreak: 'break-word',
+                              textAlign: 'center',
+                              color: 'primary.main',
+                              '&:hover': { textDecoration: 'underline' }
+                            }}
+                          >
+                            {file.nome || file.name}
+                          </Typography>
+                        )}
+                      </a>
                     </Paper>
                   </Grid>
                 ))}
               </Grid>
             )}
+
 
             {/* Upload arquivos novos */}
             <Button component="label" variant="outlined" fullWidth>
