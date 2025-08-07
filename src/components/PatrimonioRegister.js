@@ -343,7 +343,7 @@ const PatrimonioRegister = ({ props }) => {
                     <Paper sx={{ p: 1, position: 'relative' }}>
                       <IconButton
                         size="small"
-                        sx={{ position: 'absolute', top: 0, right: 0 }}
+                        sx={{ position: 'absolute', top: 0, right: 0, color: 'red' }}
                         onClick={() => handleRemoveFile(idx)}
                       >
                         <DeleteIcon fontSize="small" />
