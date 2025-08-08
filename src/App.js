@@ -1,11 +1,9 @@
-
-import Menu from "./components/Menu";
+// src/App.js
+import React from 'react';
+import AppRouter from './AppRouter';
 
 function App() {
-
-  return (
-      <Menu/>
-  );
+  return <AppRouter />;
 }
 
 export default App;

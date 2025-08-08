@@ -282,7 +282,7 @@ const PatrimonioRegister = ({ props }) => {
               <TextField fullWidth label="Localização PCS" value={local} onChange={(e) => setLocal(e.target.value)} />
               <Tooltip title={endereco || 'Clique para obter localização'}>
                 <span>
-                  <IconButton
+                <IconButton
                     onClick={() => {
                       if (!navigator.geolocation) {
                         showAlert('Geolocalização não suportada.', 'warning');
@@ -292,19 +292,23 @@ const PatrimonioRegister = ({ props }) => {
                       navigator.geolocation.getCurrentPosition(
                         async (position) => {
                           const { latitude, longitude } = position.coords;
+
+                          // ✅ Monta a URL do Google Maps (abre app no mobile)
+                          const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+
                           try {
+                            // (Opcional) ainda busca o endereço humano pra mostrar no tooltip
                             const response = await fetch(
                               `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
                             );
                             const data = await response.json();
-                            const fallback = `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`;
-                            const resolved = data?.display_name || fallback;
-                            setEndereco(resolved);
-                            setLocal(resolved);
+                            const human = data?.display_name;
+
+                            setEndereco(human || mapsUrl); // tooltip
+                            setLocal(mapsUrl);             // ⬅️ salva o link do Google Maps no campo
                           } catch {
-                            const fallback = `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`;
-                            setEndereco(fallback);
-                            setLocal(fallback);
+                            setEndereco(mapsUrl);
+                            setLocal(mapsUrl);
                           } finally {
                             setLoadingLocalizacao(false);
                           }
