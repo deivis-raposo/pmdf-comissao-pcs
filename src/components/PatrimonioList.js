@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 import { Edit, Delete, AdfScanner } from '@mui/icons-material';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 export function PatrimonioList({ text }) {
   const [rows, setRows] = useState([]);
@@ -23,14 +24,15 @@ export function PatrimonioList({ text }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
 
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const navigate = useNavigate();
+
   const showAlert = (message, severity = 'success') => {
     setAlertMessage(message);
     setAlertSeverity(severity);
     setAlertOpen(true);
   };
-
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const carregarPatrimonios = () => {
     setLoading(true);
@@ -52,6 +54,7 @@ export function PatrimonioList({ text }) {
 
   useEffect(() => {
     carregarPatrimonios();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleChangePage = (_, newPage) => setPage(newPage);
@@ -60,7 +63,15 @@ export function PatrimonioList({ text }) {
     setPage(0);
   };
 
-  const handleEdit = (id) => console.log('Editar item:', id);
+  // 👉 Navega para "/" (sua tela de cadastro) com cpr/bpm/pcs na URL
+  const handleEdit = (row) => {
+    const { ID_CPR, ID_BPM, ID_PCS } = row || {};
+    if (!ID_CPR || !ID_BPM || !ID_PCS) {
+      showAlert('Registro sem chaves (CPR/BPM/PCS) para edição.', 'warning');
+      return;
+    }
+    navigate(`/?cpr=${ID_CPR}&bpm=${ID_BPM}&pcs=${ID_PCS}`);
+  };
 
   const confirmDelete = (id) => {
     setDeleteId(id);
@@ -124,7 +135,7 @@ export function PatrimonioList({ text }) {
                           <TableCell>
                             <Stack direction="row" spacing={1}>
                               <IconButton
-                                onClick={() => handleEdit(row.ID_PATRIMONIO)}
+                                onClick={() => handleEdit(row)}
                                 color="primary"
                                 size={isMobile ? 'small' : 'medium'}
                               >

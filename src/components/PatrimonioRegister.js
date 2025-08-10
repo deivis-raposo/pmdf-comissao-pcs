@@ -7,12 +7,22 @@ import {
 } from '@mui/material';
 import PlaceIcon from '@mui/icons-material/Place';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { useSearchParams } from 'react-router-dom';
 
 const API_BASE = 'https://glu9nz6t07.execute-api.us-east-1.amazonaws.com';
 
 const PatrimonioRegister = ({ props }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  // 🔎 lê cpr/bpm/pcs da URL e permite limpar a querystring depois
+  const [searchParams, setSearchParams] = useSearchParams();
+  const qpCpr = searchParams.get('cpr');
+  const qpBpm = searchParams.get('bpm');
+  const qpPcs = searchParams.get('pcs');
+
+  // Flag para usar os params só uma vez
+  const [qsBootstrapped, setQsBootstrapped] = useState(false);
 
   const [listaCPRs, setListaCPRs] = useState([]);
   const [listaBPMs, setListaBPMs] = useState([]);
@@ -44,14 +54,12 @@ const PatrimonioRegister = ({ props }) => {
   };
 
   // Converte arquivo para Base64
-  const fileToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = (error) => reject(error);
-      reader.readAsDataURL(file);
-    });
-  };
+  const fileToBase64 = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
   // Carregar CPRs
   useEffect(() => {
@@ -64,7 +72,17 @@ const PatrimonioRegister = ({ props }) => {
       .catch(() => showAlert("Erro ao carregar CPRs", "error"));
   }, []);
 
-  // Carregar BPMs
+  // 📌 Seleciona CPR vindo da URL quando a lista estiver carregada (apenas 1x)
+  useEffect(() => {
+    if (!qsBootstrapped && listaCPRs.length && qpCpr) {
+      setID_CPR(qpCpr);
+      const cpr = listaCPRs.find(c => String(c.ID_CPR) === String(qpCpr));
+      setDS_CPR(cpr?.DS_CPR || '');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listaCPRs, qpCpr, qsBootstrapped]);
+
+  // Carregar BPMs quando escolher CPR
   useEffect(() => {
     if (!ID_CPR) { setListaBPMs([]); setID_BPM(''); return; }
     fetch(`${API_BASE}/listar-bpm-por-cpr?cpr=${ID_CPR}`)
@@ -76,7 +94,17 @@ const PatrimonioRegister = ({ props }) => {
       .catch(() => showAlert("Erro ao carregar BPMs", "error"));
   }, [ID_CPR]);
 
-  // Carregar PCS
+  // 📌 Seleciona BPM da URL quando a lista chegar e já houver CPR (apenas 1x)
+  useEffect(() => {
+    if (!qsBootstrapped && listaBPMs.length && qpBpm && ID_CPR) {
+      setID_BPM(qpBpm);
+      const bpm = listaBPMs.find(b => String(b.ID_BPM) === String(qpBpm));
+      setDS_BPM(bpm?.DS_BPM || '');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listaBPMs, qpBpm, ID_CPR, qsBootstrapped]);
+
+  // Carregar PCS quando escolher BPM
   useEffect(() => {
     if (!ID_BPM) { setListaPCSs([]); setID_PCS(''); return; }
     fetch(`${API_BASE}/listar-pcs-por-bpm?bpm=${ID_BPM}`)
@@ -88,7 +116,15 @@ const PatrimonioRegister = ({ props }) => {
       .catch(() => showAlert("Erro ao carregar PCSs", "error"));
   }, [ID_BPM]);
 
-  // Consultar patrimônio existente
+  // 📌 Seleciona PCS da URL quando a lista chegar e já houver BPM (apenas 1x)
+  useEffect(() => {
+    if (!qsBootstrapped && listaPCSs.length && qpPcs && ID_BPM) {
+      setID_PCS(qpPcs);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listaPCSs, qpPcs, ID_BPM, qsBootstrapped]);
+
+  // Consultar patrimônio existente quando os 3 IDs estiverem definidos
   useEffect(() => {
     if (ID_CPR && ID_BPM && ID_PCS) {
       fetch(`${API_BASE}/consultar-patrimonio?cpr=${ID_CPR}&bpm=${ID_BPM}&pcs=${ID_PCS}`)
@@ -96,9 +132,7 @@ const PatrimonioRegister = ({ props }) => {
         .then(result => {
           if (!result.success) {
             showAlert(result.message, result.severity);
-            return;
-          }
-          if (result.data.encontrado) {
+          } else if (result.data.encontrado) {
             const p = result.data.patrimonio;
             setPatrimonioExistente(p.ID_PATRIMONIO);
             setLocal(p.TX_LOCALIZACAO || '');
@@ -128,10 +162,24 @@ const PatrimonioRegister = ({ props }) => {
             setCheckedTorre(false);
             setFiles([]);
           }
+
+          // ✅ Importante: depois da 1ª carga a partir da URL, limpamos a querystring
+          if (!qsBootstrapped && (qpCpr || qpBpm || qpPcs)) {
+            setQsBootstrapped(true);
+            setSearchParams({}, { replace: true }); // remove ?cpr=&bpm=&pcs= da URL
+          }
         })
-        .catch(() => showAlert("Erro ao consultar patrimônio", "error"));
+        .catch(() => {
+          showAlert("Erro ao consultar patrimônio", "error");
+          // Mesmo em erro, evite reprocessar os params infinitamente
+          if (!qsBootstrapped && (qpCpr || qpBpm || qpPcs)) {
+            setQsBootstrapped(true);
+            setSearchParams({}, { replace: true });
+          }
+        });
     }
-  }, [ID_CPR, ID_BPM, ID_PCS]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ID_CPR, ID_BPM, ID_PCS]); // dispara quando os 3 seletores estão definidos
 
   const handleReset = () => {
     setFiles([]);
@@ -241,6 +289,7 @@ const PatrimonioRegister = ({ props }) => {
                   const cpr = listaCPRs.find(c => c.ID_CPR === e.target.value);
                   setDS_CPR(cpr?.DS_CPR || '');
                 }}
+                label="CPR"
               >
                 <MenuItem value=""><em>Selecione um CPR</em></MenuItem>
                 {listaCPRs.map(cpr => <MenuItem key={cpr.ID_CPR} value={cpr.ID_CPR}>{cpr.DS_CPR}</MenuItem>)}
@@ -258,6 +307,7 @@ const PatrimonioRegister = ({ props }) => {
                   const bpm = listaBPMs.find(b => b.ID_BPM === e.target.value);
                   setDS_BPM(bpm?.DS_BPM || '');
                 }}
+                label="BPM"
               >
                 <MenuItem value=""><em>Selecione um BPM</em></MenuItem>
                 {listaBPMs.map(bpm => <MenuItem key={bpm.ID_BPM} value={bpm.ID_BPM}>{bpm.DS_BPM}</MenuItem>)}
@@ -271,6 +321,7 @@ const PatrimonioRegister = ({ props }) => {
                 labelId="pcs-select-label"
                 value={ID_PCS}
                 onChange={(e) => setID_PCS(e.target.value)}
+                label="PCS"
               >
                 <MenuItem value=""><em>Selecione um PCS</em></MenuItem>
                 {listaPCSs.map(pcs => <MenuItem key={pcs.ID_PCS} value={pcs.ID_PCS}>{pcs.DS_PCS}</MenuItem>)}
@@ -282,7 +333,7 @@ const PatrimonioRegister = ({ props }) => {
               <TextField fullWidth label="Localização PCS" value={local} onChange={(e) => setLocal(e.target.value)} />
               <Tooltip title={endereco || 'Clique para obter localização'}>
                 <span>
-                <IconButton
+                  <IconButton
                     onClick={() => {
                       if (!navigator.geolocation) {
                         showAlert('Geolocalização não suportada.', 'warning');
@@ -292,20 +343,17 @@ const PatrimonioRegister = ({ props }) => {
                       navigator.geolocation.getCurrentPosition(
                         async (position) => {
                           const { latitude, longitude } = position.coords;
-
-                          // ✅ Monta a URL do Google Maps (abre app no mobile)
                           const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
 
                           try {
-                            // (Opcional) ainda busca o endereço humano pra mostrar no tooltip
                             const response = await fetch(
                               `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
                             );
                             const data = await response.json();
                             const human = data?.display_name;
 
-                            setEndereco(human || mapsUrl); // tooltip
-                            setLocal(mapsUrl);             // ⬅️ salva o link do Google Maps no campo
+                            setEndereco(human || mapsUrl);
+                            setLocal(mapsUrl);
                           } catch {
                             setEndereco(mapsUrl);
                             setLocal(mapsUrl);
@@ -349,11 +397,11 @@ const PatrimonioRegister = ({ props }) => {
                         size="small"
                         sx={{ position: 'absolute', top: 0, right: 0, color: 'red' }}
                         onClick={() => handleRemoveFile(idx)}
+                        aria-label="Remover arquivo"
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
 
-                      {/* Link clicável para abrir o arquivo/imagem */}
                       <a
                         href={file.url || URL.createObjectURL(file)}
                         target="_blank"
@@ -369,12 +417,7 @@ const PatrimonioRegister = ({ props }) => {
                         ) : (
                           <Typography
                             variant="body2"
-                            sx={{
-                              wordBreak: 'break-word',
-                              textAlign: 'center',
-                              color: 'primary.main',
-                              '&:hover': { textDecoration: 'underline' }
-                            }}
+                            sx={{ wordBreak: 'break-word', textAlign: 'center', color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}
                           >
                             {file.nome || file.name}
                           </Typography>
@@ -386,14 +429,18 @@ const PatrimonioRegister = ({ props }) => {
               </Grid>
             )}
 
-
             {/* Upload arquivos novos */}
             <Button component="label" variant="outlined" fullWidth>
               Anexar Fotos/Arquivos
-              <input type="file" hidden multiple onChange={(e) => {
-                const novos = Array.from(e.target.files);
-                setFiles(prev => [...prev, ...novos]);
-              }} />
+              <input
+                type="file"
+                hidden
+                multiple
+                onChange={(e) => {
+                  const novos = Array.from(e.target.files);
+                  setFiles(prev => [...prev, ...novos]);
+                }}
+              />
             </Button>
 
             {/* Botões */}

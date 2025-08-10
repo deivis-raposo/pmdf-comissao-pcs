@@ -1,5 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom'; // <-- IMPORTE AQUI NO TOPO
+
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
@@ -10,13 +12,10 @@ Amplify.configure(awsExports);
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </React.StrictMode>
 );
 
-// Medição de performance opcional
 reportWebVitals();
-
-
-
-

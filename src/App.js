@@ -1,9 +1,7 @@
 // src/App.js
 import React from 'react';
-import AppRouter from './AppRouter';
+import Menu from './components/Menu';
 
-function App() {
-  return <AppRouter />;
+export default function App() {
+  return <Menu />;
 }
-
-export default App;
