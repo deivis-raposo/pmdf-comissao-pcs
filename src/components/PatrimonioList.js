@@ -3,7 +3,7 @@ import {
   Box, Card, CardContent, Typography, Table, TableBody, TableCell, TableContainer,
   TableHead, TablePagination, TableRow, IconButton, useMediaQuery, useTheme,
   Paper, CircularProgress, Stack, Snackbar, Alert, Dialog, DialogTitle, DialogContent,
-  DialogContentText, DialogActions, Button
+  DialogContentText, DialogActions, Button, Tooltip
 } from '@mui/material';
 import { Edit, Delete, AdfScanner } from '@mui/icons-material';
 import axios from 'axios';
@@ -63,7 +63,7 @@ export function PatrimonioList({ text }) {
     setPage(0);
   };
 
-  // 👉 Navega para "/" (sua tela de cadastro) com cpr/bpm/pcs na URL
+  // Editar: abre a tela de cadastro com cpr/bpm/pcs na URL
   const handleEdit = (row) => {
     const { ID_CPR, ID_BPM, ID_PCS } = row || {};
     if (!ID_CPR || !ID_BPM || !ID_PCS) {
@@ -92,7 +92,27 @@ export function PatrimonioList({ text }) {
     }
   };
 
-  const handleReport = (id) => console.log('Detalhar item:', id);
+  // Gerar relatório PDF
+  const handleReport = async (id) => {
+    try {
+      showAlert('Gerando relatório...', 'info');
+      const resp = await axios.post(
+        'https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/gerar-relatorio-patrimonio',
+        null,
+        { params: { id } }
+      );
+      if (resp.data.success) {
+        const url = resp.data.data?.url;
+        showAlert('Relatório pronto!', 'success');
+        if (url) window.open(url, '_blank');
+      } else {
+        showAlert(resp.data.message || 'Falha ao gerar relatório.', 'warning');
+      }
+    } catch (e) {
+      console.error(e);
+      showAlert('Erro ao gerar relatório.', 'error');
+    }
+  };
 
   return (
     <Box sx={{ px: 2, py: 4, display: 'flex', justifyContent: 'center' }}>
@@ -134,27 +154,41 @@ export function PatrimonioList({ text }) {
                           <TableCell>{row.DS_PCS}</TableCell>
                           <TableCell>
                             <Stack direction="row" spacing={1}>
-                              <IconButton
-                                onClick={() => handleEdit(row)}
-                                color="primary"
-                                size={isMobile ? 'small' : 'medium'}
-                              >
-                                <Edit fontSize={isMobile ? 'small' : 'medium'} />
-                              </IconButton>
-                              <IconButton
-                                onClick={() => confirmDelete(row.ID_PATRIMONIO)}
-                                color="error"
-                                size={isMobile ? 'small' : 'medium'}
-                              >
-                                <Delete fontSize={isMobile ? 'small' : 'medium'} />
-                              </IconButton>
-                              <IconButton
-                                onClick={() => handleReport(row.ID_PATRIMONIO)}
-                                color="secondary"
-                                size={isMobile ? 'small' : 'medium'}
-                              >
-                                <AdfScanner fontSize={isMobile ? 'small' : 'medium'} />
-                              </IconButton>
+                              <Tooltip title="Editar">
+                                <span>
+                                  <IconButton
+                                    onClick={() => handleEdit(row)}
+                                    color="primary"
+                                    size={isMobile ? 'small' : 'medium'}
+                                  >
+                                    <Edit fontSize={isMobile ? 'small' : 'medium'} />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+
+                              <Tooltip title="Excluir">
+                                <span>
+                                  <IconButton
+                                    onClick={() => confirmDelete(row.ID_PATRIMONIO)}
+                                    color="error"
+                                    size={isMobile ? 'small' : 'medium'}
+                                  >
+                                    <Delete fontSize={isMobile ? 'small' : 'medium'} />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+
+                              <Tooltip title="Gerar PDF">
+                                <span>
+                                  <IconButton
+                                    onClick={() => handleReport(row.ID_PATRIMONIO)}
+                                    color="secondary"
+                                    size={isMobile ? 'small' : 'medium'}
+                                  >
+                                    <AdfScanner fontSize={isMobile ? 'small' : 'medium'} />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
                             </Stack>
                           </TableCell>
                         </TableRow>
