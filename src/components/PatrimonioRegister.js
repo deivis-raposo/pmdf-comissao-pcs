@@ -1,3 +1,4 @@
+// src/components/PatrimonioRegister.js
 import React, { useEffect, useState } from 'react';
 import {
   Card, CardContent, FormControl, InputLabel, Select, MenuItem, TextField,
@@ -32,16 +33,22 @@ const PatrimonioRegister = ({ props }) => {
   const [ID_BPM, setID_BPM] = useState('');
   const [DS_BPM, setDS_BPM] = useState('');
   const [ID_PCS, setID_PCS] = useState('');
-  const [local, setLocal] = useState('');
+
+  // Campos de dados do patrimônio
+  const [local, setLocal] = useState('');               // TX_LOCALIZACAO (URL do mapa)
+  const [endereco, setEndereco] = useState('');         // TX_ENDERECO (endereço humano)
   const [observacoes, setObservacoes] = useState('');
   const [checkedModulo, setCheckedModulo] = useState(false);
   const [checkedBase, setCheckedBase] = useState(false);
   const [checkedTorre, setCheckedTorre] = useState(false);
   const [patrimonioExistente, setPatrimonioExistente] = useState(null);
+
+  // Arquivos/anexos
   const [files, setFiles] = useState([]);
+
+  // Loading e alertas
   const [loading, setLoading] = useState(false);
   const [loadingLocalizacao, setLoadingLocalizacao] = useState(false);
-  const [endereco, setEndereco] = useState('');
 
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
@@ -136,6 +143,7 @@ const PatrimonioRegister = ({ props }) => {
             const p = result.data.patrimonio;
             setPatrimonioExistente(p.ID_PATRIMONIO);
             setLocal(p.TX_LOCALIZACAO || '');
+            setEndereco(p.TX_ENDERECO || '');   // ⬅️ novo campo
             setObservacoes(p.TX_OBSERVACAO || '');
             setCheckedModulo(!!p.ST_MODULO_LOCALIZADO);
             setCheckedBase(!!p.ST_BASE_LOCALIZADO);
@@ -156,6 +164,7 @@ const PatrimonioRegister = ({ props }) => {
             // Limpa apenas dados, mantendo seleções
             setPatrimonioExistente(null);
             setLocal('');
+            setEndereco(''); // ⬅️ limpa novo campo
             setObservacoes('');
             setCheckedModulo(false);
             setCheckedBase(false);
@@ -163,7 +172,7 @@ const PatrimonioRegister = ({ props }) => {
             setFiles([]);
           }
 
-          // ✅ Importante: depois da 1ª carga a partir da URL, limpamos a querystring
+          // ✅ depois da 1ª carga a partir da URL, limpar a querystring
           if (!qsBootstrapped && (qpCpr || qpBpm || qpPcs)) {
             setQsBootstrapped(true);
             setSearchParams({}, { replace: true }); // remove ?cpr=&bpm=&pcs= da URL
@@ -171,7 +180,6 @@ const PatrimonioRegister = ({ props }) => {
         })
         .catch(() => {
           showAlert("Erro ao consultar patrimônio", "error");
-          // Mesmo em erro, evite reprocessar os params infinitamente
           if (!qsBootstrapped && (qpCpr || qpBpm || qpPcs)) {
             setQsBootstrapped(true);
             setSearchParams({}, { replace: true });
@@ -191,6 +199,7 @@ const PatrimonioRegister = ({ props }) => {
     setListaBPMs([]);
     setListaPCSs([]);
     setLocal('');
+    setEndereco(''); // ⬅️ novo campo
     setObservacoes('');
     setCheckedModulo(false);
     setCheckedBase(false);
@@ -243,7 +252,8 @@ const PatrimonioRegister = ({ props }) => {
         ID_CPR,
         ID_BPM,
         ID_PCS,
-        TX_LOCALIZACAO: local || null,
+        TX_LOCALIZACAO: local || null,      // URL do mapa
+        TX_ENDERECO: endereco || null,      // ⬅️ novo campo
         ST_MODULO_LOCALIZADO: checkedModulo ? 1 : 0,
         ST_BASE_LOCALIZADO: checkedBase ? 1 : 0,
         ST_TORRE_LOCALIZADO: checkedTorre ? 1 : 0,
@@ -267,6 +277,41 @@ const PatrimonioRegister = ({ props }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const obterLocalizacao = () => {
+    if (!navigator.geolocation) {
+      showAlert('Geolocalização não suportada.', 'warning');
+      return;
+    }
+    setLoadingLocalizacao(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
+          );
+          const data = await response.json();
+          const human = data?.display_name;
+
+          setEndereco(human || ''); // ⬅️ preenche Endereço
+          setLocal(mapsUrl);        // ⬅️ preenche Localização (URL do mapa)
+        } catch {
+          setEndereco('');
+          setLocal(mapsUrl);
+        } finally {
+          setLoadingLocalizacao(false);
+        }
+      },
+      () => {
+        showAlert('Erro ao obter localização.', 'error');
+        setLoadingLocalizacao(false);
+      }
+    );
   };
 
   return (
@@ -328,51 +373,32 @@ const PatrimonioRegister = ({ props }) => {
               </Select>
             </FormControl>
 
-            {/* Localização */}
+            {/* Localização (URL) + ícone para obter */}
             <Box display="flex" alignItems="center" gap={1}>
-              <TextField fullWidth label="Localização PCS" value={local} onChange={(e) => setLocal(e.target.value)} />
+              <TextField
+                fullWidth
+                label="Localização PCS (URL do mapa)"
+                value={local}
+                onChange={(e) => setLocal(e.target.value)}
+                placeholder="https://www.google.com/maps/search/?api=1&query=lat,long"
+              />
               <Tooltip title={endereco || 'Clique para obter localização'}>
                 <span>
-                  <IconButton
-                    onClick={() => {
-                      if (!navigator.geolocation) {
-                        showAlert('Geolocalização não suportada.', 'warning');
-                        return;
-                      }
-                      setLoadingLocalizacao(true);
-                      navigator.geolocation.getCurrentPosition(
-                        async (position) => {
-                          const { latitude, longitude } = position.coords;
-                          const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
-
-                          try {
-                            const response = await fetch(
-                              `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`
-                            );
-                            const data = await response.json();
-                            const human = data?.display_name;
-
-                            setEndereco(human || mapsUrl);
-                            setLocal(mapsUrl);
-                          } catch {
-                            setEndereco(mapsUrl);
-                            setLocal(mapsUrl);
-                          } finally {
-                            setLoadingLocalizacao(false);
-                          }
-                        },
-                        () => {
-                          showAlert('Erro ao obter localização.', 'error');
-                          setLoadingLocalizacao(false);
-                        }
-                      );
-                    }}
-                  >
+                  <IconButton onClick={obterLocalizacao} aria-label="Obter localização">
                     {loadingLocalizacao ? <CircularProgress size={24} /> : <PlaceIcon color="error" />}
                   </IconButton>
                 </span>
               </Tooltip>
             </Box>
+
+            {/* Endereço (texto humano) */}
+            <TextField
+              fullWidth
+              label="Endereço"
+              value={endereco}
+              onChange={(e) => setEndereco(e.target.value)}
+              placeholder="Endereço completo (pode editar manualmente)"
+            />
 
             {/* Switches */}
             <Box>
@@ -385,7 +411,14 @@ const PatrimonioRegister = ({ props }) => {
             </Box>
 
             {/* Observações */}
-            <TextField fullWidth multiline rows={4} label="Observações Gerais" value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
+              label="Observações Gerais"
+              value={observacoes}
+              onChange={(e) => setObservacoes(e.target.value)}
+            />
 
             {/* Lista de arquivos */}
             {files.length > 0 && (
