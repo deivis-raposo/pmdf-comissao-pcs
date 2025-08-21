@@ -229,11 +229,12 @@ export function EspelhoPatrimonios({ text }) {
                     <Card sx={{ width: 250, boxShadow: 3 }}>
                       <CardContent>
                         <Typography variant="subtitle1" textAlign="center" gutterBottom>
-                          Qtd Bases Localizadas
+                         Bases
                         </Typography>
                         <Typography variant="h4" textAlign="center" color="success">
-                          {qtdBases.length} / {qtdRegitros.length}
+                          {qtdBases.length}  / {qtdRegitros.length}
                         </Typography>
+                
                       </CardContent>
                     </Card>
 
@@ -245,6 +246,7 @@ export function EspelhoPatrimonios({ text }) {
                         <Typography variant="h4" textAlign="center" color="success">
                           {qtdModulos.length} / {qtdRegitros.length}
                         </Typography>
+                     
                       </CardContent>
                     </Card>
 
@@ -256,6 +258,7 @@ export function EspelhoPatrimonios({ text }) {
                         <Typography variant="h4" textAlign="center" color="success">
                           {qtdTorres.length} / {qtdRegitros.length}
                         </Typography>
+                      
                       </CardContent>
                     </Card>
                 </Box>
