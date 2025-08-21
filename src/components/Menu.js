@@ -6,12 +6,14 @@ import {
   List, Typography, Divider, IconButton, ListItem, ListItemButton,
   ListItemIcon, ListItemText, Container
 } from '@mui/material';
-import { Menu as MenuIcon, ChevronLeft, ChevronRight, Add, Grading } from '@mui/icons-material';
+import { Menu as MenuIcon, ChevronLeft, ChevronRight, Add, Grading, Gradient } from '@mui/icons-material';
 
 import { Routes, Route, useNavigate } from 'react-router-dom';
 
 import PatrimonioRegister from './PatrimonioRegister';
 import { PatrimonioList } from './PatrimonioList';
+import { RelatoriosGerenciais } from './RelatoriosGerenciais';
+import { EspelhoPatrimonios } from './EspelhoPatrimonios';
 
 const drawerWidth = 240;
 
@@ -120,6 +122,20 @@ export default function Menu() {
               <ListItemText primary="Listar Patrimônios" />
             </ListItemButton>
           </ListItem>
+          <ListItem disablePadding onClick={() => { navigate('/espelho'); handleDrawerClose(); }}>
+            <ListItemButton>
+              <ListItemIcon><Gradient /></ListItemIcon>
+              <ListItemText primary="Resumo Atividades" />
+            </ListItemButton>
+          </ListItem>
+          {/* 
+          <ListItem disablePadding onClick={() => { navigate('/relatorios'); handleDrawerClose(); }}>
+            <ListItemButton>
+              <ListItemIcon><Grading /></ListItemIcon>
+              <ListItemText primary="Relatórios Gerenciais" />
+            </ListItemButton>
+          </ListItem>
+          */}
         </List>
       </Drawer>
 
@@ -129,6 +145,8 @@ export default function Menu() {
           <Routes>
             <Route path="/" element={<PatrimonioRegister text="CADASTRO DE PATRIMÔNIO" />} />
             <Route path="/listar" element={<PatrimonioList text="PATRIMÔNIOS CADASTRADOS" />} />
+            <Route path="/espelho" element={<EspelhoPatrimonios text="RESUMO ATIVIDADES REALIZADAS" />} />
+            <Route path="/relatorios" element={<RelatoriosGerenciais text="RELATÓRIOS GERENCIAIS" />} />
           </Routes>
         </Container>
       </Main>

@@ -43,6 +43,10 @@ const PatrimonioRegister = ({ props }) => {
   const [checkedTorre, setCheckedTorre] = useState(false);
   const [patrimonioExistente, setPatrimonioExistente] = useState(null);
 
+  // 🔢 Novos campos de tombamento (sempre editáveis)
+  const [tombamentoModulo, setTombamentoModulo] = useState(''); // NU_TOMBAMENTO_MODULO
+  const [tombamentoTorre, setTombamentoTorre] = useState('');   // NU_TOMBAMENTO_TORRE
+
   // Arquivos/anexos
   const [files, setFiles] = useState([]);
 
@@ -143,11 +147,15 @@ const PatrimonioRegister = ({ props }) => {
             const p = result.data.patrimonio;
             setPatrimonioExistente(p.ID_PATRIMONIO);
             setLocal(p.TX_LOCALIZACAO || '');
-            setEndereco(p.TX_ENDERECO || '');   // ⬅️ novo campo
+            setEndereco(p.TX_ENDERECO || '');
             setObservacoes(p.TX_OBSERVACAO || '');
             setCheckedModulo(!!p.ST_MODULO_LOCALIZADO);
             setCheckedBase(!!p.ST_BASE_LOCALIZADO);
             setCheckedTorre(!!p.ST_TORRE_LOCALIZADO);
+
+            // Tombamentos: sempre carregam, independentemente dos switches
+            setTombamentoModulo(p.NU_TOMBAMENTO_MODULO || '');
+            setTombamentoTorre(p.NU_TOMBAMENTO_TORRE || '');
 
             if (p.arquivos && p.arquivos.length > 0) {
               setFiles(p.arquivos.map(arq => ({
@@ -158,24 +166,28 @@ const PatrimonioRegister = ({ props }) => {
                 tamanho: arq.TAM_ARQUIVO,
                 existente: true
               })));
+            } else {
+              setFiles([]);
             }
             showAlert(result.message, result.severity);
           } else {
             // Limpa apenas dados, mantendo seleções
             setPatrimonioExistente(null);
             setLocal('');
-            setEndereco(''); // ⬅️ limpa novo campo
+            setEndereco('');
             setObservacoes('');
             setCheckedModulo(false);
             setCheckedBase(false);
             setCheckedTorre(false);
+            setTombamentoModulo('');
+            setTombamentoTorre('');
             setFiles([]);
           }
 
           // ✅ depois da 1ª carga a partir da URL, limpar a querystring
           if (!qsBootstrapped && (qpCpr || qpBpm || qpPcs)) {
             setQsBootstrapped(true);
-            setSearchParams({}, { replace: true }); // remove ?cpr=&bpm=&pcs= da URL
+            setSearchParams({}, { replace: true });
           }
         })
         .catch(() => {
@@ -187,7 +199,7 @@ const PatrimonioRegister = ({ props }) => {
         });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ID_CPR, ID_BPM, ID_PCS]); // dispara quando os 3 seletores estão definidos
+  }, [ID_CPR, ID_BPM, ID_PCS]);
 
   const handleReset = () => {
     setFiles([]);
@@ -199,11 +211,13 @@ const PatrimonioRegister = ({ props }) => {
     setListaBPMs([]);
     setListaPCSs([]);
     setLocal('');
-    setEndereco(''); // ⬅️ novo campo
+    setEndereco('');
     setObservacoes('');
     setCheckedModulo(false);
     setCheckedBase(false);
     setCheckedTorre(false);
+    setTombamentoModulo('');
+    setTombamentoTorre('');
     setPatrimonioExistente(null);
   };
 
@@ -252,11 +266,13 @@ const PatrimonioRegister = ({ props }) => {
         ID_CPR,
         ID_BPM,
         ID_PCS,
-        TX_LOCALIZACAO: local || null,      // URL do mapa
-        TX_ENDERECO: endereco || null,      // ⬅️ novo campo
+        TX_LOCALIZACAO: local || null,
+        TX_ENDERECO: endereco || null,
         ST_MODULO_LOCALIZADO: checkedModulo ? 1 : 0,
         ST_BASE_LOCALIZADO: checkedBase ? 1 : 0,
         ST_TORRE_LOCALIZADO: checkedTorre ? 1 : 0,
+        NU_TOMBAMENTO_MODULO: tombamentoModulo || null, // sempre enviado
+        NU_TOMBAMENTO_TORRE: tombamentoTorre || null,   // sempre enviado
         TX_OBSERVACAO: observacoes || null,
         arquivos: arquivosParaSalvar
       };
@@ -298,8 +314,8 @@ const PatrimonioRegister = ({ props }) => {
           const data = await response.json();
           const human = data?.display_name;
 
-          setEndereco(human || ''); // ⬅️ preenche Endereço
-          setLocal(mapsUrl);        // ⬅️ preenche Localização (URL do mapa)
+          setEndereco(human || '');
+          setLocal(mapsUrl);
         } catch {
           setEndereco('');
           setLocal(mapsUrl);
@@ -400,15 +416,85 @@ const PatrimonioRegister = ({ props }) => {
               placeholder="Endereço completo (pode editar manualmente)"
             />
 
-            {/* Switches */}
+            {/* Switches + Tombamentos (alinhados na mesma linha) */}
             <Box>
               <Typography variant="subtitle2">Patrimônio Localizado:</Typography>
-              <FormGroup row sx={{ gap: 2 }}>
-                <FormControlLabel control={<Switch checked={checkedModulo} onChange={() => setCheckedModulo(!checkedModulo)} />} label="Módulo" />
-                <FormControlLabel control={<Switch checked={checkedBase} onChange={() => setCheckedBase(!checkedBase)} />} label="Base" />
-                <FormControlLabel control={<Switch checked={checkedTorre} onChange={() => setCheckedTorre(!checkedTorre)} />} label="Torre" />
-              </FormGroup>
+
+              {/* Linha: Base (somente switch) */}
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={checkedBase}
+                      onChange={() => setCheckedBase(!checkedBase)}
+                    />
+                  }
+                  label="Base"
+                />
+              </Box>
+
+              {/* Linha: Módulo + Tombamento do Módulo */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  flexWrap: isMobile ? 'wrap' : 'nowrap',
+                  mb: 1
+                }}
+              >
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={checkedModulo}
+                      onChange={() => setCheckedModulo(!checkedModulo)}
+                    />
+                  }
+                  label="Módulo"
+                  sx={{ mr: 0 }}
+                />
+                <TextField
+                  size="small"
+                  label="Nº Tombamento Módulo"
+                  placeholder="ex.: Pcs-00000.000.000"
+                  value={tombamentoModulo}
+                  onChange={(e) => setTombamentoModulo(e.target.value)}
+                  sx={{ flex: 1, minWidth: isMobile ? '100%' : 220 }}
+                  inputProps={{ maxLength: 50 }}
+                />
+              </Box>
+
+              {/* Linha: Torre + Tombamento da Torre */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  flexWrap: isMobile ? 'wrap' : 'nowrap'
+                }}
+              >
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={checkedTorre}
+                      onChange={() => setCheckedTorre(!checkedTorre)}
+                    />
+                  }
+                  label="Torre"
+                  sx={{ mr: 2 }}
+                />
+                <TextField
+                  size="small"
+                  label="Nº Tombamento Torre"
+                  placeholder="ex.:  Pcs-00000.000.000"
+                  value={tombamentoTorre}
+                  onChange={(e) => setTombamentoTorre(e.target.value)}
+                  sx={{ flex: 1, minWidth: isMobile ? '100%' : 220 }}
+                  inputProps={{ maxLength: 50 }}
+                />
+              </Box>
             </Box>
+
 
             {/* Observações */}
             <TextField
