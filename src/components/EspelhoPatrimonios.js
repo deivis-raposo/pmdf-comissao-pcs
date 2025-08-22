@@ -192,7 +192,7 @@ export function EspelhoPatrimonios({ text }) {
                     
                       <CardContent>
                         <Typography variant="subtitle1" textAlign="center" gutterBottom>
-                          Total de CPR's Visitados
+                          CPR's Visitados
                         </Typography>
                         <Typography variant="h4" textAlign="center" color="primary">
                           {qtdCPRs.length}
@@ -204,7 +204,7 @@ export function EspelhoPatrimonios({ text }) {
                   <Card sx={{ width: 250, boxShadow: 3 }}>
                     <CardContent>
                       <Typography variant="subtitle1" textAlign="center" gutterBottom>
-                        Total BPM's Visitados
+                        BPM's Visitados
                       </Typography>
                       <Typography variant="h4" textAlign="center" color="primary">
                         {qtdBPMs.length}
@@ -216,7 +216,7 @@ export function EspelhoPatrimonios({ text }) {
                     <CardActionArea>
                       <CardContent onClick={handleDetalheCPR}>
                           <Typography variant="subtitle1" textAlign="center" gutterBottom>
-                            Total PCS's Registrados
+                            PCS's Registrados
                           </Typography>
                           <Typography variant="h4" textAlign="center" color="primary">
                               {qtdRegitros.length}
@@ -229,7 +229,7 @@ export function EspelhoPatrimonios({ text }) {
                     <Card sx={{ width: 250, boxShadow: 3 }}>
                       <CardContent>
                         <Typography variant="subtitle1" textAlign="center" gutterBottom>
-                         Bases
+                         Bases Localizadas
                         </Typography>
                         <Typography variant="h4" textAlign="center" color="success">
                           {qtdBases.length}  / {qtdRegitros.length}
@@ -241,7 +241,7 @@ export function EspelhoPatrimonios({ text }) {
                     <Card sx={{ width: 250, boxShadow: 3 }}>
                       <CardContent>
                         <Typography variant="subtitle1" textAlign="center" gutterBottom>
-                          Qtd Módulos Localizados
+                          Módulos Localizados
                         </Typography>
                         <Typography variant="h4" textAlign="center" color="success">
                           {qtdModulos.length} / {qtdRegitros.length}
@@ -253,7 +253,7 @@ export function EspelhoPatrimonios({ text }) {
                     <Card sx={{ width: 250, boxShadow: 3 }}>
                       <CardContent>
                         <Typography variant="subtitle1" textAlign="center" gutterBottom>
-                          Qtd Torres Localizadas
+                          Torres Localizadas
                         </Typography>
                         <Typography variant="h4" textAlign="center" color="success">
                           {qtdTorres.length} / {qtdRegitros.length}
