@@ -144,6 +144,10 @@ export function EspelhoPatrimonios({ text }) {
     navigate('/listar');
   };
 
+  const handleDetalheBPM = () => {
+    navigate('/relatoriosBPM');
+  };
+
   // Gerar relatório PDF
   const handleReport = async (id) => {
     try {
@@ -202,14 +206,16 @@ export function EspelhoPatrimonios({ text }) {
                   </Card>
 
                   <Card sx={{ width: 250, boxShadow: 3 }}>
-                    <CardContent>
-                      <Typography variant="subtitle1" textAlign="center" gutterBottom>
-                        BPM's Visitados
-                      </Typography>
-                      <Typography variant="h4" textAlign="center" color="primary">
-                        {qtdBPMs.length}
-                      </Typography>
-                    </CardContent>
+                    <CardActionArea>
+                      <CardContent onClick={handleDetalheBPM}>
+                        <Typography variant="subtitle1" textAlign="center" gutterBottom>
+                          BPM's Visitados
+                        </Typography>
+                        <Typography variant="h4" textAlign="center" color="primary">
+                          {qtdBPMs.length}
+                        </Typography>
+                      </CardContent>
+                    </CardActionArea>
                   </Card>
 
                   <Card sx={{ width: 250, boxShadow: 3 }}>

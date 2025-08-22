@@ -26,10 +26,10 @@ export function RelatoriosGerenciais({ text }) {
     setAlertOpen(true);
   };
 
-  const carregarPatrimonios = () => {
+  const carregarBPMsVisitados = () => {
     setLoading(true);
     axios
-      .get('https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/listar-todos-patrimonios')
+      .get('https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/qtdBPMsVisitados')
       .then((res) => {
         if (res.data.success) {
           setRows(res.data.data || []);
@@ -45,30 +45,36 @@ export function RelatoriosGerenciais({ text }) {
   };
 
   useEffect(() => {
-    carregarPatrimonios();
+    carregarBPMsVisitados();
   }, []);
 
   // Gerar relatório PDF
-  const handleReport = async (id) => {
-    try {
-      showAlert('Gerando relatório...', 'info');
-      const resp = await axios.post(
-        'https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/gerar-relatorio-patrimonio',
-        null,
-        { params: { id } }
-      );
-      if (resp.data.success) {
-        const url = resp.data.data?.url;
-        showAlert('Relatório pronto!', 'success');
-        if (url) window.open(url, '_blank');
-      } else {
-        showAlert(resp.data.message || 'Falha ao gerar relatório.', 'warning');
-      }
-    } catch (e) {
-      console.error(e);
-      showAlert('Erro ao gerar relatório.', 'error');
+  // Gerar relatório PDF
+const handleReport = async (id) => {
+  try {
+    showAlert('Gerando relatório...', 'info');
+
+    const { data } = await axios.post(
+      'https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/gerar-relatorio-bpm',
+      null,
+      { params: { bpm: id } }
+    );
+
+    if (data?.success) {
+      const url = data?.data?.url;
+      const total = data?.data?.totalPatrimonios ?? 0;
+      showAlert(`Relatório pronto (${total} patrimônio(s)).`, 'success');
+      if (url) window.open(url, '_blank');
+    } else {
+      showAlert(data?.message || 'Falha ao gerar relatório.', data?.severity || 'warning');
+      console.error('API respondeu erro:', data);
     }
-  };
+  } catch (err) {
+    console.error('Erro na chamada:', err?.response?.data || err);
+    showAlert(err?.response?.data?.message || 'Erro ao gerar relatório.', 'error');
+  }
+};
+
 
   return (
     <Box sx={{ px: 2, py: 4, display: 'flex', justifyContent: 'center' }}>
@@ -96,23 +102,21 @@ export function RelatoriosGerenciais({ text }) {
                     <TableRow>
                       <TableCell sx={{ fontWeight: 'bold' }}>CPR</TableCell>
                       <TableCell sx={{ fontWeight: 'bold' }}>BPM</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>PCS</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>Ações</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>PDF</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {rows
                       .map((row) => (
-                        <TableRow hover key={row.ID_PATRIMONIO}>
+                        <TableRow hover key={row.ID_BPM}>
                           <TableCell>{row.DS_CPR}</TableCell>
                           <TableCell>{row.DS_BPM}</TableCell>
-                          <TableCell>{row.DS_PCS}</TableCell>
                           <TableCell>
                             <Stack direction="row" spacing={1}>
-                              <Tooltip title="Gerar PDF">
+                              <Tooltip title="Gerar PDF por BPM">
                                 <span>
                                   <IconButton
-                                    onClick={() => handleReport(row.ID_PATRIMONIO)}
+                                    onClick={() => handleReport(row.ID_BPM)}
                                     color="secondary"
                                     size={isMobile ? 'small' : 'medium'}
                                   >

@@ -146,7 +146,7 @@ export default function Menu() {
             <Route path="/" element={<PatrimonioRegister text="CADASTRO DE PATRIMÔNIO" />} />
             <Route path="/listar" element={<PatrimonioList text="PATRIMÔNIOS CADASTRADOS" />} />
             <Route path="/espelho" element={<EspelhoPatrimonios text="RESUMO ATIVIDADES REALIZADAS" />} />
-            <Route path="/relatorios" element={<RelatoriosGerenciais text="RELATÓRIOS GERENCIAIS" />} />
+            <Route path="/relatoriosBPM" element={<RelatoriosGerenciais text="RELATÓRIOS GERENCIAIS" />} />
           </Routes>
         </Container>
       </Main>
