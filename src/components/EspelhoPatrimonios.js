@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import {
   Box, Card, CardContent, Typography, useMediaQuery, useTheme,
   CircularProgress, Snackbar, Alert,
-  CardActionArea
+  CardActionArea,
+  Button
 } from '@mui/material';
 
 import axios from 'axios';
@@ -270,6 +271,12 @@ export function EspelhoPatrimonios({ text }) {
                 </Box>
               </>
           )}
+
+            <Button variant="contained" fullWidth color="primary"  disabled={loading}>
+                {loading ? 'Gerando Relatório Sintético...' : ''}
+                Gerar Relatório Sintético
+              </Button>
+
         </CardContent>
       </Card>
 

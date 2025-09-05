@@ -49,31 +49,46 @@ export function RelatoriosGerenciais({ text }) {
   }, []);
 
   // Gerar relatório PDF
+
   // Gerar relatório PDF
-const handleReport = async (id) => {
-  try {
-    showAlert('Gerando relatório...', 'info');
-
-    const { data } = await axios.post(
-      'https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/gerar-relatorio-bpm',
-      null,
-      { params: { bpm: id } }
-    );
-
-    if (data?.success) {
-      const url = data?.data?.url;
-      const total = data?.data?.totalPatrimonios ?? 0;
-      showAlert(`Relatório pronto (${total} patrimônio(s)).`, 'success');
-      if (url) window.open(url, '_blank');
-    } else {
-      showAlert(data?.message || 'Falha ao gerar relatório.', data?.severity || 'warning');
-      console.error('API respondeu erro:', data);
+  const handleReport = async (id) => {
+    // abre a aba no gesto do usuário
+    const newTab = window.open('about:blank', '_blank', 'noopener,noreferrer');
+    if (newTab) {
+      newTab.document.write('<title>Gerando relatório…</title><p>Gerando relatório…</p>');
     }
-  } catch (err) {
-    console.error('Erro na chamada:', err?.response?.data || err);
-    showAlert(err?.response?.data?.message || 'Erro ao gerar relatório.', 'error');
-  }
-};
+
+    try {
+      showAlert('Gerando relatório...', 'info');
+
+      const { data } = await axios.post(
+        'https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/gerar-relatorio-bpm',
+        null,
+        { params: { id } }
+      );
+
+      if (!data?.success || !data?.data?.url) {
+        throw new Error(data?.message || 'Falha ao gerar relatório.');
+      }
+
+      const url = data.data.url;
+
+      // SEM checagem de isStandalone: priorize a aba recém-aberta
+      if (newTab && !newTab.closed) {
+        newTab.location.replace(url);
+      } else {
+        // popup bloqueado → tenta nova aba; se falhar, mesma aba
+        const w = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!w) window.location.assign(url);
+      }
+
+      showAlert('Relatório pronto!', 'success');
+    } catch (e) {
+      console.error(e);
+      if (newTab && !newTab.closed) newTab.close();
+      showAlert('Erro ao gerar relatório.', 'error');
+    }
+  };
 
 
   return (
