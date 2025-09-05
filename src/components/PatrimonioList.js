@@ -93,26 +93,49 @@ export function PatrimonioList({ text }) {
   };
 
   // Gerar relatório PDF
-  const handleReport = async (id) => {
-    try {
-      showAlert('Gerando relatório...', 'info');
-      const resp = await axios.post(
-        'https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/gerar-relatorio-patrimonio',
-        null,
-        { params: { id } }
-      );
-      if (resp.data.success) {
-        const url = resp.data.data?.url;
-        showAlert('Relatório pronto!', 'success');
-        if (url) window.open(url, '_blank');
-      } else {
-        showAlert(resp.data.message || 'Falha ao gerar relatório.', 'warning');
+    const handleReport = (id) => {
+      const newTab = window.open('', '_blank'); // sem noopener/noreferrer no iOS
+      if (!newTab) {
+        showAlert('Permita pop-ups para abrir o relatório.', 'warning');
+        return;
       }
-    } catch (e) {
-      console.error(e);
-      showAlert('Erro ao gerar relatório.', 'error');
-    }
-  };
+
+      const endpoint = 'https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/gerar-relatorio-patrimonio';
+      const html = `
+    <!doctype html>
+    <html lang="pt-br">
+    <head>
+      <meta charset="utf-8" />
+      <title>Gerando relatório…</title>
+      <meta name="viewport" content="width=device-width,initial-scale=1" />
+      <style>
+        body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:24px}
+      </style>
+    </head>
+    <body>
+      <p>Gerando relatório…</p>
+      <script>
+        (async () => {
+          try {
+            const resp = await fetch('${endpoint}?id=${encodeURIComponent(id)}', { method: 'POST' });
+            const data = await resp.json();
+            if (data && data.success && data.data && data.data.url) {
+              location.replace(data.data.url);
+            } else {
+              document.body.innerHTML = '<p>Falha ao gerar relatório.</p>';
+            }
+          } catch (err) {
+            document.body.innerHTML = '<p>Erro ao gerar relatório.</p>';
+          }
+        })();
+      </script>
+    </body>
+    </html>`;
+      newTab.document.open();
+      newTab.document.write(html);
+      newTab.document.close();
+    };
+
 
   return (
     <Box sx={{ px: 2, py: 4, display: 'flex', justifyContent: 'center' }}>

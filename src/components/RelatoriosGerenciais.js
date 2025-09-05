@@ -51,46 +51,49 @@ export function RelatoriosGerenciais({ text }) {
   // Gerar relatório PDF
 
   // Gerar relatório PDF
-  const handleReport = async (id) => {
-    // abre a aba no gesto do usuário
-    const newTab = window.open('about:blank', '_blank', 'noopener,noreferrer');
-    if (newTab) {
-      newTab.document.write('<title>Gerando relatório…</title><p>Gerando relatório…</p>');
-    }
-
-    try {
-      showAlert('Gerando relatório...', 'info');
-
-      const { data } = await axios.post(
-        'https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/gerar-relatorio-bpm',
-        null,
-        { params: { id } }
-      );
-
-      if (!data?.success || !data?.data?.url) {
-        throw new Error(data?.message || 'Falha ao gerar relatório.');
+  const handleReport = (id) => {
+      const newTab = window.open('', '_blank'); // sem noopener/noreferrer no iOS
+      if (!newTab) {
+        showAlert('Permita pop-ups para abrir o relatório.', 'warning');
+        return;
       }
 
-      const url = data.data.url;
-
-      // SEM checagem de isStandalone: priorize a aba recém-aberta
-      if (newTab && !newTab.closed) {
-        newTab.location.replace(url);
-      } else {
-        // popup bloqueado → tenta nova aba; se falhar, mesma aba
-        const w = window.open(url, '_blank', 'noopener,noreferrer');
-        if (!w) window.location.assign(url);
-      }
-
-      showAlert('Relatório pronto!', 'success');
-    } catch (e) {
-      console.error(e);
-      if (newTab && !newTab.closed) newTab.close();
-      showAlert('Erro ao gerar relatório.', 'error');
-    }
-  };
-
-
+      const endpoint =  'https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/gerar-relatorio-bpm';
+      const html = `
+    <!doctype html>
+    <html lang="pt-br">
+    <head>
+      <meta charset="utf-8" />
+      <title>Gerando relatório…</title>
+      <meta name="viewport" content="width=device-width,initial-scale=1" />
+      <style>
+        body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;padding:24px}
+      </style>
+    </head>
+    <body>
+      <p>Gerando relatório…</p>
+      <script>
+        (async () => {
+          try {
+            const resp = await fetch('${endpoint}?id=${encodeURIComponent(id)}', { method: 'POST' });
+            const data = await resp.json();
+            if (data && data.success && data.data && data.data.url) {
+              location.replace(data.data.url);
+            } else {
+              document.body.innerHTML = '<p>Falha ao gerar relatório.</p>';
+            }
+          } catch (err) {
+            document.body.innerHTML = '<p>Erro ao gerar relatório.</p>';
+          }
+        })();
+      </script>
+    </body>
+    </html>`;
+      newTab.document.open();
+      newTab.document.write(html);
+      newTab.document.close();
+    };
+  
   return (
     <Box sx={{ px: 2, py: 4, display: 'flex', justifyContent: 'center' }}>
       <Card sx={{ width: '100%', maxWidth: 1000, boxShadow: 3 }}>

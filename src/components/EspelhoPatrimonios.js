@@ -149,28 +149,6 @@ export function EspelhoPatrimonios({ text }) {
     navigate('/relatoriosBPM');
   };
 
-  // Gerar relatório PDF
-  const handleReport = async (id) => {
-    try {
-      showAlert('Gerando relatório...', 'info');
-      const resp = await axios.post(
-        'https://glu9nz6t07.execute-api.us-east-1.amazonaws.com/gerar-relatorio-patrimonio',
-        null,
-        { params: { id } }
-      );
-      if (resp.data.success) {
-        const url = resp.data.data?.url;
-        showAlert('Relatório pronto!', 'success');
-        if (url) window.open(url, '_blank');
-      } else {
-        showAlert(resp.data.message || 'Falha ao gerar relatório.', 'warning');
-      }
-    } catch (e) {
-      console.error(e);
-      showAlert('Erro ao gerar relatório.', 'error');
-    }
-  };
-
   return (
     <Box sx={{ px: 2, py: 4, display: 'flex', justifyContent: 'center' }}>
       <Card sx={{ width: '100%', maxWidth: 1000, boxShadow: 3 }}>
